@@ -12,7 +12,7 @@ import {TreeModule} from 'primeng/tree';
 import {ContextMenuModule} from 'primeng/contextmenu';
 import {MenuModule} from 'primeng/menu';
 @NgModule({
-  imports:      [ 
+  imports:[
     BrowserModule, 
     BrowserAnimationsModule, 
     FormsModule, 
@@ -22,6 +22,8 @@ import {MenuModule} from 'primeng/menu';
     MenuModule,
     ],
   declarations: [ AppComponent, HelloComponent ],
+  providers: [
+    ],
   bootstrap:    [ AppComponent ]
 })
 export class AppModule { }
