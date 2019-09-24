@@ -1,0 +1,17 @@
+<!-- <hello name="{{ name }}"></hello> -->
+
+<h1>Hello</h1>
+
+<p-tree [(value)]="filesTree11" layout="horizontal" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="nodeSelect($event)"
+ [propagateSelectionUp]="true" [contextMenu]="cm">
+	<ng-template let-node pTemplate="default">
+		<div style="text-align:center">
+			<img width="50" height="50" src="https://loremflickr.com/50/50" /><br>
+		  <label>{{node.label}}</label>
+    </div>
+  </ng-template>
+</p-tree>
+
+<p-contextMenu #cm [model]="items"></p-contextMenu>
+
+<div style="margin-top:8px">Selected Node: {{selectedFile ? selectedFile.label : 'none'}}</div>

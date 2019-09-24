@@ -1,0 +1,20 @@
+<h1>Hello {{name}}!!!</h1>
+
+<button 
+(click)="isOpen = !isOpen" 
+cdkOverlayOrigin 
+#trigger = "cdkOverlayOrigin"
+>Click Me</button>
+
+<ng-template 
+cdkConnectedOverlay 
+[cdkConnectedOverlayOrigin]="trigger" 
+[cdkConnectedOverlayOpen]="isOpen">
+<div class="menu">
+<ul>
+<li>Menu1</li>
+<li>Menu2</li>
+<li>Menu3</li>
+</ul>
+</div>
+</ng-template>
