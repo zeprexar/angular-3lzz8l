@@ -1,57 +1,92 @@
-import { Component, OnInit, AfterViewChecked, DoCheck, AfterContentInit, AfterContentChecked } from '@angular/core';
-import { of } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { of, BehaviorSubject, Subscription } from 'rxjs';
 import { MenuItem, TreeNode } from 'primeng/api';
+import * as _ from 'lodash';
+
 @Component({
   selector: 'myapp',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   name = 'Angularndbr';
 
-  filesTree11: TreeNode[];
-  files: TreeNode[];
+  filesTree: TreeNode[];
   selectedFile: TreeNode;
-  count = 0;
   items: MenuItem[];
+  copiedNode: TreeNode;
+  copiedable = new BehaviorSubject<boolean>(true);
+  copiedable$ = this.copiedable.asObservable();
+  contextMenuSubscription: Subscription
 
   nodeSelect($event) {
-      this.executeSA();
-    console.log($event.node)
+    this.processTreeNodes(this.filesTree, null);
+    //console.log($event.node)
   }
-  executeSA(){
-    this.processTreeNodes(this.filesTree11, null);
+  contextMenuSelect($event) {
+    this.nodeSelect($event);
+    if (this.copiedNode) {
+      const equalsNodes = (this.copiedNode === this.selectedFile) || (this.copiedNode.parent === this.selectedFile);
+      this.copiedable.next(equalsNodes);
+    }
+  }
+
+  copyNode(selectedNode: TreeNode) {
+    this.copiedNode = selectedNode;
+    this.copiedable.next(false);
+
+  }
+
+  pasteNode(selectedNode: TreeNode) {
+
+    const prox = _.cloneDeep(this.copiedNode);
+    selectedNode.children.push(prox);
+    selectedNode.expanded = true;
+    this.selectedFile = prox;
+
+    this.copiedable.next(true);
+
+    if (this.copiedNode.parent) {
+      const children = this.copiedNode.parent.children
+      children.splice(children.indexOf(this.copiedNode), 1);
+      if (children.length == 0)
+        this.copiedNode.parent.expanded = false;
+    } else
+      this.filesTree.splice(this.filesTree.indexOf(this.copiedNode), 1);
+    this.copiedNode = null;
   }
 
   ngOnInit() {
+
+    // init the Context Menu    
     this.items = [
-      { label: 'View', icon: 'fa fa-search', command: (event) => this.viewFile(this.selectedFile) }
+      {
+        label: 'View', icon: 'fa fa-search',
+        command: (event) => this.viewFile(this.selectedFile)
+      },
+      {
+        label: 'Copy', icon: 'fa fa-copy',
+        command: (event) => this.copyNode(this.selectedFile)
+      },
+      {
+        label: 'Past', icon: 'fa fa-past', disabled: true,
+        command: (event) => this.pasteNode(this.selectedFile)
+      }
     ];
 
+    // subscription for paste Context Menu
+    this.contextMenuSubscription = this.copiedable$.subscribe((value) => {
+      this.items[2].disabled = value;
+    })
+
+    // call for populate the tree
     this.getFiles().subscribe(res => {
-      this.filesTree11 = res;
+      this.filesTree = res;
     });
   }
 
-  expandAll() {
-    this.filesTree11.forEach(node => {
-      this.expandRecursive(node, true);
-    });
-  }
-
-  collapseAll() {
-    this.filesTree11.forEach(node => {
-      this.expandRecursive(node, false);
-    });
-  }
-
-  private expandRecursive(node: TreeNode, isExpand: boolean) {
-    node.expanded = isExpand;
-    if (node.children) {
-      node.children.forEach(childNode => {
-        this.expandRecursive(childNode, isExpand);
-      });
-    }
+  ngOnDestroy() {
+    this.contextMenuSubscription.unsubscribe();
   }
 
   viewFile(node: TreeNode) {
@@ -59,7 +94,7 @@ export class AppComponent implements OnInit {
   }
 
   getFiles() {
-    this.files = [{
+    const files = [{
       label: 'Root',
       children: [
         {
@@ -189,32 +224,17 @@ export class AppComponent implements OnInit {
         }
       ]
     }];
-    return of(this.files);
-    // this.processTreeNodes(this.filesTree11, null);
-    // this.checkTreeNodes(this.filesTree11);
-
+    return of(files);
   }
 
+  // filling of node.parent of each node in the tree ( Workaround solution )
   private processTreeNodes(treeNode: TreeNode[], parent: TreeNode) {
     for (const node of treeNode) {
-      if (parent != null) {
+      if (parent) {
         node.parent = parent;
       }
       if (node.children && node.children.length > 0) {
         this.processTreeNodes(node.children, node);
-      }
-      // node.label += '@'
-    }
-
-  }
-
-  private checkTreeNodes(treeNode: TreeNode[]) {
-    for (const node of treeNode) {
-      node.parent != null ?
-        console.log('>> ' + node.parent.label + ' > ' + node.label) :
-        console.log('>> ' + 'null');
-      if (node.children && node.children.length > 0) {
-        this.checkTreeNodes(node.children);
       }
     }
   }
